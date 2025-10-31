@@ -1,42 +1,73 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from pydantic import BaseModel
-import openai
 import logging
+import os
+
+from YoutubeRecommenditon.getYoutubeRecommendetion import getYoutubeRecommendetion
 
 # --- ロギング設定 ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-# FastAPIアプリの作成
+
 app = FastAPI()
+load_dotenv()
 
-# OpenAI APIキー設定（環境変数で設定推奨）
-openai.api_key = ""
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# リクエストボディ定義
+if not OPENAI_API_KEY:
+    raise ValueError("OpenAI APIキーが見つかりません。")
+
+
 class FeelingRequest(BaseModel):
     feeling: str
 
+
 @app.post("/recommend")
 def recommend_movie(req: FeelingRequest):
-    prompt = f"{req.feeling}ときに見るべき映画をスペース区切りで教えて"
-    
-    # OpenAI API呼び出し
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "あなたは映画のおすすめAIです。"},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=100
-    )
-    
-    answer = response.choices[0].message.content.strip()
-    # --- ログ出力 ---
-    logger.info("Received request: %s", req.feeling)
-    logger.info("Prompt: %s", prompt)
-    logger.info("OpenAI API raw response: %s", response)
+    # YouTube情報を取得
+    raw_data = getYoutubeRecommendetion(YOUTUBE_API_KEY, OPENAI_API_KEY, req.feeling)
 
-    answer = response.choices[0].message.content.strip()
+    # 整形して出力フォーマットに合わせる
+    formatted_data = []
+    for item in raw_data.get("results", []):
+        formatted_data.append({
+            "url": item["url"],
+            "name": item["title"],
+            "icon": item["thumbnail"],
+            "review": (
+                item["comments"][0]["text"]
+                if item["comments"]
+                else "コメントはありません。"
+            )
+        })
 
-    logger.info("Extracted recommendation: %s", answer)
-    return {"prompt": prompt, "recommendation": answer}
+    response = {"data": formatted_data}
+    logger.info("Response JSON: %s", response)
+    return response
+
+@app.get("/health")
+def helth():
+    return {
+        "data": [
+            {
+                "url": "https://example.com",
+                "name": "Example1",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            },
+            {
+                "url": "https://example2.com",
+                "name": "Example2",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            },
+            {
+                "url": "https://example3.com",
+                "name": "Example3",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            }
+        ]
+    }
