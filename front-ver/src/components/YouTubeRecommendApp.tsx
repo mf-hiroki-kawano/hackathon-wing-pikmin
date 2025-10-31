@@ -2,60 +2,22 @@
 
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
-
-// 気分のボタンコンポーネント
-const MoodButton = ({ label, isSelected, onClick }: { label: string; isSelected: boolean; onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className={`px-6 py-2 rounded-lg font-medium transition-all ${
-      isSelected
-        ? 'bg-gray-700 text-white'
-        : 'bg-gray-600 text-white hover:bg-gray-500'
-    }`}
-  >
-    {label}
-  </button>
-);
-
-// 動画カードコンポーネント
-const VideoCard = ({ video }: { video: { id: string; title: string; url: string; thumbnail: string; duration: string } }) => (
-  <div className="flex gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-    <img
-      src={video.thumbnail}
-      alt={video.title}
-      className="w-40 h-24 object-cover rounded"
-    />
-    <div className="flex-1">
-      <h3 className="font-bold text-lg mb-1">{video.title}</h3>
-      <a
-        href={video.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 hover:underline text-sm mb-2 block"
-      >
-        動画リンク
-      </a>
-      <p className="text-gray-500 text-sm">{video.duration}</p>
-    </div>
-  </div>
-);
+import MoodButton from './MoodButton';
+import VideoCard from './VideoCard';
+import type { Video } from '../types/video';
+import { API_BASE_URL, RECOMMEND_ENDPOINT } from '../constants/config';
+import { MOODS } from '../constants/moods';
+import { DEMO_VIDEOS } from '../constants/demoVideos';
 
 // メインアプリコンポーネント
 const YouTubeRecommendApp = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [videos, setVideos] = useState<Array<{ id: string; title: string; url: string; thumbnail: string; duration: string }>>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const moods = [
-    { id: 'happy', label: '楽しい' },
-    { id: 'sad', label: '悲しい' },
-    { id: 'stress', label: 'ストレス発散' },
-    { id: 'exciting', label: 'キュンキュン' },
-    { id: 'curious', label: '知的好奇心' },
-    { id: 'healing', label: '癒しがほしい' }
-  ];
+  const moods = MOODS;
 
   // バックエンドAPIを呼び出す関数
   const fetchVideos = async (mood: string, query: string = '') => {
@@ -64,7 +26,7 @@ const YouTubeRecommendApp = () => {
 
     try {
       // Pythonバックエンドのエンドポイント
-      const response = await fetch('http://localhost:8000/api/recommend', {
+      const response = await fetch(`${API_BASE_URL}${RECOMMEND_ENDPOINT}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,50 +46,7 @@ const YouTubeRecommendApp = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'エラーが発生しました');
       // デモ用のダミーデータ
-      setVideos([
-        {
-          id: '1',
-          title: '動画タイトル',
-          url: 'https://youtube.com',
-          thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=300&fit=crop',
-          duration: '再生時間'
-        },
-        {
-          id: '2',
-          title: '動画タイトル',
-          url: 'https://youtube.com',
-          thumbnail: 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=400&h=300&fit=crop',
-          duration: '再生時間'
-        },
-        {
-          id: '3',
-          title: '動画タイトル',
-          url: 'https://youtube.com',
-          thumbnail: 'https://images.unsplash.com/photo-1521543387862-6703e5be6957?w=400&h=300&fit=crop',
-          duration: '再生時間'
-        },
-        {
-          id: '4',
-          title: '動画タイトル',
-          url: 'https://youtube.com',
-          thumbnail: 'https://images.unsplash.com/photo-1517148815978-75f6acaaf32c?w=400&h=300&fit=crop',
-          duration: '再生時間'
-        },
-        {
-          id: '5',
-          title: '動画タイトル',
-          url: 'https://youtube.com',
-          thumbnail: 'https://images.unsplash.com/photo-1523464862212-d6631d073194?w=400&h=300&fit=crop',
-          duration: '再生時間'
-        },
-        {
-          id: '6',
-          title: '動画タイトル',
-          url: 'https://youtube.com',
-          thumbnail: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=300&fit=crop',
-          duration: '再生時間'
-        }
-      ]);
+      setVideos(DEMO_VIDEOS);
     } finally {
       setLoading(false);
     }
