@@ -8,12 +8,27 @@ from typing import List
 from pydantic import BaseModel
 
 from YoutubeRecommenditon.getYoutubeRecommendetion import getYoutubeRecommendetion
+from fastapi.middleware.cors import CORSMiddleware
 
 # --- ロギング設定 ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+# 許可するオリジン（開発中なら * でもOK）
+origins = [
+    "http://localhost:3000",  # Next.jsフロント
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,          # 許可するオリジン
+    allow_credentials=True,
+    allow_methods=["*"],            # すべてのHTTPメソッドを許可
+    allow_headers=["*"],            # すべてのHTTPヘッダーを許可
+)
 load_dotenv()
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
@@ -41,11 +56,7 @@ class FeelingRequest(BaseModel):
 
 @app.post("/recommend")
 def recommend_movie(req: FeelingRequest):
-    # YouTube情報を取得
     raw_data = getYoutubeRecommendetion(YOUTUBE_API_KEY, OPENAI_API_KEY, req.filters)
-    print(req)
-
-    # 整形して出力フォーマットに合わせる
     formatted_data = []
     for item in raw_data.get("results", []):
         formatted_data.append({
@@ -59,7 +70,8 @@ def recommend_movie(req: FeelingRequest):
             )
         })
 
-    response = {"data": formatted_data}
+    # 🔽ここを変更：「data」→「videos」
+    response = {"videos": formatted_data}
     logger.info("Response JSON: %s", response)
     return response
 
