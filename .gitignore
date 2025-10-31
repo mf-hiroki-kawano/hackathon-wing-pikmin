@@ -1,0 +1,51 @@
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.env/
+venv/
+ENV/
+env/
+.venv/
+
+# =====================
+# Secrets & Configs
+# =====================
+# 環境変数ファイル（APIキーなど）
+.env
+*.env
+backend/.env
+
+# Local settings / credentials
+*.pem
+*.key
+*.crt
+*.p12
+*.token
+*.secret
+
+# =====================
+# IDE / OS Specific
+# =====================
+# VSCode
+.vscode/
+# PyCharm
+.idea/
+# macOS
+.DS_Store
+# Windows
+Thumbs.db
+
+# =====================
+# Logs & caches
+# =====================
+*.log
+*.sqlite3
+*.db
+*.bak
+*.tmp
+.cache/
