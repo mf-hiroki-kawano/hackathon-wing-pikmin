@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import logging
 import os
+from typing import List
+from pydantic import BaseModel
 
 from YoutubeRecommenditon.getYoutubeRecommendetion import getYoutubeRecommendetion
 
@@ -21,7 +23,7 @@ if not OPENAI_API_KEY:
 
 
 class FeelingRequest(BaseModel):
-    feeling: str
+    fillters: List[str]
 
 
 @app.post("/recommend")
