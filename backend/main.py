@@ -11,36 +11,61 @@ logger = logging.getLogger(__name__)
 # FastAPIアプリの作成
 app = FastAPI()
 load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("OpenAI APIキーが見つかりません。")
+# api_key = os.getenv("OPENAI_API_KEY")
+# if not api_key:
+#     raise ValueError("OpenAI APIキーが見つかりません。")
 
 app = FastAPI()
 
 class FeelingRequest(BaseModel):
     feeling: str
 
-@app.post("/recommend")
-def recommend_movie(req: FeelingRequest):
-    prompt = f"{req.feeling}ときに見るべき映画をスペース区切りで教えて"
-    client = OpenAI(api_key=api_key)
-    # Chat API呼び出し（新仕様）
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "あなたは映画のおすすめAIです。"},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=100,
-    )
+# @app.post("/recommend")
+# def recommend_movie(req: FeelingRequest):
+#     prompt = f"{req.feeling}ときに見るべき映画をスペース区切りで教えて"
+#     client = OpenAI(api_key=api_key)
+#     # Chat API呼び出し（新仕様）
+#     response = client.chat.completions.create(
+#         model="gpt-4o-mini",
+#         messages=[
+#             {"role": "system", "content": "あなたは映画のおすすめAIです。"},
+#             {"role": "user", "content": prompt},
+#         ],
+#         max_tokens=100,
+#     )
 
-    answer = response.choices[0].message.content.strip()
+#     answer = response.choices[0].message.content.strip()
 
-    # --- ログ出力 ---
-    logger.info("Received request: %s", req.feeling)
-    logger.info("OpenAI API raw response: %s", response)
+#     # --- ログ出力 ---
+#     logger.info("Received request: %s", req.feeling)
+#     logger.info("OpenAI API raw response: %s", response)
 
-    answer = response.choices[0].message.content.strip()
+#     answer = response.choices[0].message.content.strip()
 
-    logger.info("Extracted recommendation: %s", answer)
-    return {"prompt": prompt, "recommendation": answer}
+#     logger.info("Extracted recommendation: %s", answer)
+#     return {"prompt": prompt, "recommendation": answer}
+
+@app.get("/health")
+def helth():
+    return {
+        "data": [
+            {
+                "url": "https://example.com",
+                "name": "Example1",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            },
+            {
+                "url": "https://example2.com",
+                "name": "Example2",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            },
+            {
+                "url": "https://example3.com",
+                "name": "Example3",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            }
+        ]
+    }
