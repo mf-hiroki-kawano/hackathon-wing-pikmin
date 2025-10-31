@@ -36,13 +36,14 @@ app.add_middleware(
 
 
 class FeelingRequest(BaseModel):
-    fillters: List[str]
+    filters: List[str]
 
 
 @app.post("/recommend")
 def recommend_movie(req: FeelingRequest):
     # YouTube情報を取得
-    raw_data = getYoutubeRecommendetion(YOUTUBE_API_KEY, OPENAI_API_KEY, req.fillters)
+    raw_data = getYoutubeRecommendetion(YOUTUBE_API_KEY, OPENAI_API_KEY, req.filters)
+    print(req)
 
     # 整形して出力フォーマットに合わせる
     formatted_data = []
