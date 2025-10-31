@@ -9,7 +9,7 @@ import type { Video } from '../types/video';
 import { MOODS } from '../constants/moods';
 import { SCENES } from '../constants/scenes';
 import { DEMO_VIDEOS } from '../constants/demoVideos';
-import { recommendByFilters, ApiError } from '../lib/apiClient';
+import { recommendByFilters, ApiError, getHealth } from '../lib/apiClient';
 import { coerceVideos } from '../utils/validation';
 
 // メインアプリコンポーネント
@@ -63,19 +63,49 @@ const YouTubeRecommendApp = () => {
     }
   };
 
-  const handleSceneClick = (sceneId: string) => {
-    setSelectedScene(sceneId);
+  const handleSceneClick = (sceneLabel: string) => {
+    setSelectedScene(sceneLabel);
   };
 
-  const handleMoodClick = (moodId: string) => {
-    setSelectedMood((prev) => (prev === moodId ? null : moodId));
+  const handleMoodClick = (moodLabel: string) => {
+    setSelectedMood((prev) => (prev === moodLabel ? null : moodLabel));
   };
 
   const handleSearch = () => {
     const keywords = searchQuery.trim() ? searchQuery.trim().split(/\s+/) : [];
     const filters = [selectedScene ?? '', selectedMood ?? '', ...keywords].filter(Boolean);
+    console.log('[ui] recommend:requestBody', {
+      selectedScene,
+      selectedMood,
+      keywords,
+      payload: { filters },
+    });
     if (filters.length === 0) return;
     fetchVideos(filters);
+  };
+
+  const handleHealthCheck = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getHealth({ timeoutMs: 5000 });
+      const mapped = res.data.map((item, idx) => ({
+        id: `${idx}`,
+        title: item.name,
+        url: item.url,
+        thumbnail: item.icon,
+        duration: '0:00',
+      }));
+      setVideos(mapped);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || '通信エラーが発生しました');
+      } else {
+        setError('予期しないエラーが発生しました');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,36 +119,47 @@ const YouTubeRecommendApp = () => {
       <main className="max-w-6xl mx-auto p-6">
         {/* シーン・気分・検索 */}
         <div className="mb-8">
-          <h2 className="text-2xl text-center mb-6 text-gray-800">どんなシーンですか？</h2>
+          {/* ① シーンを選択 */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white shrink-0">1</div>
+            <h2 className="text-lg text-gray-800">シーンを選択 <span className="text-red-500">*</span></h2>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {scenes.map((scene) => (
               <SceneButton
                 key={scene.id}
                 label={scene.label}
                 description={scene.description}
-                isSelected={selectedScene === scene.id}
-                onClick={() => handleSceneClick(scene.id)}
+                isSelected={selectedScene === scene.label}
+                onClick={() => handleSceneClick(scene.label)}
                 icon={scene.icon}
                 colorClass={scene.colorClass}
               />
             ))}
           </div>
-
-          <h2 className="text-2xl text-center mb-6 text-gray-800">どんな気分になりたいですか？</h2>
+          {/* ② 気分を選択 */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white shrink-0">2</div>
+            <h2 className="text-lg text-gray-800">気分を選択</h2>
+          </div>
           <div className="flex flex-wrap justify-center gap-3 mb-6">
             {moods.map((mood) => (
               <MoodButton
                 key={mood.id}
                 label={mood.label}
-                isSelected={selectedMood === mood.id}
-                onClick={() => handleMoodClick(mood.id)}
+                isSelected={selectedMood === mood.label}
+                onClick={() => handleMoodClick(mood.label)}
                 icon={mood.icon}
                 colorClass={mood.colorClass}
               />
             ))}
           </div>
-
-          <div className="flex gap-2 max-w-3xl mx-auto">
+          {/* ③ 詳細キーワード */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white shrink-0">3</div>
+            <h2 className="text-lg text-gray-800">詳細キーワード</h2>
+          </div>
+          <div className="flex gap-2">
             <input
               type="text"
               value={searchQuery}
@@ -135,6 +176,13 @@ const YouTubeRecommendApp = () => {
               <Search size={20} />
               検索
             </button>
+            {/* <button
+              onClick={handleHealthCheck}
+              disabled={loading}
+              className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              ヘルスチェック
+            </button> */}
           </div>
         </div>
 
