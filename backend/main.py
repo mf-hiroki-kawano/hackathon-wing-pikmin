@@ -42,7 +42,7 @@ class FeelingRequest(BaseModel):
 @app.post("/recommend")
 def recommend_movie(req: FeelingRequest):
     # YouTube情報を取得
-    raw_data = getYoutubeRecommendetion(YOUTUBE_API_KEY, OPENAI_API_KEY, req.feeling)
+    raw_data = getYoutubeRecommendetion(YOUTUBE_API_KEY, OPENAI_API_KEY, req.fillters)
 
     # 整形して出力フォーマットに合わせる
     formatted_data = []
