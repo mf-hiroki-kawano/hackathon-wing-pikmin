@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import MoodButton from './MoodButton';
 import VideoCard from './VideoCard';
 import type { Video } from '../types/video';
-import { API_BASE_URL, RECOMMEND_ENDPOINT } from '../constants/config';
 import { MOODS } from '../constants/moods';
 import { DEMO_VIDEOS } from '../constants/demoVideos';
+import { recommendApi, ApiError } from '../lib/apiClient';
+import { coerceVideos } from '../utils/validation';
 
 // メインアプリコンポーネント
 const YouTubeRecommendApp = () => {
@@ -16,38 +17,44 @@ const YouTubeRecommendApp = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const currentControllerRef = useRef<AbortController | null>(null);
 
   const moods = MOODS;
 
-  // バックエンドAPIを呼び出す関数
+  // バックエンドAPIを呼び出す関数（タイムアウト/重複防止/バリデーション/共通エラー対応）
   const fetchVideos = async (mood: string, query: string = '') => {
     setLoading(true);
     setError(null);
 
     try {
-      // Pythonバックエンドのエンドポイント
-      const response = await fetch(`${API_BASE_URL}${RECOMMEND_ENDPOINT}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          mood: mood,
-          query: query
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('動画の取得に失敗しました');
+      // 既存のリクエストがあれば中断（重複防止）
+      if (currentControllerRef.current) {
+        currentControllerRef.current.abort();
       }
+      const controller = new AbortController();
+      currentControllerRef.current = controller;
 
-      const data = await response.json();
-      setVideos(data.videos || []);
+      const data = await recommendApi(mood, query, { timeoutMs: 10000, signal: controller.signal });
+      const validated = coerceVideos(data.videos);
+      setVideos(validated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
+      if (err instanceof ApiError) {
+        if (err.code === 'ABORTED') {
+          setError('リクエストが中断されました');
+        } else if (err.status) {
+          setError(`サーバーエラー(${err.status})が発生しました`);
+        } else {
+          setError(err.message || '通信エラーが発生しました');
+        }
+      } else {
+        setError('予期しないエラーが発生しました');
+      }
       // デモ用のダミーデータ
       setVideos(DEMO_VIDEOS);
     } finally {
+      if (currentControllerRef.current) {
+        currentControllerRef.current = null;
+      }
       setLoading(false);
     }
   };
@@ -84,6 +91,8 @@ const YouTubeRecommendApp = () => {
                 label={mood.label}
                 isSelected={selectedMood === mood.id}
                 onClick={() => handleMoodClick(mood.id)}
+                icon={mood.icon}
+                colorClass={mood.colorClass}
               />
             ))}
           </div>
