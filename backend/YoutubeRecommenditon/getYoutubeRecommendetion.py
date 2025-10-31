@@ -1,7 +1,7 @@
 from openai import OpenAI
 from googleapiclient.discovery import build
-from getYoutubeQuerybyChatGPT import getYoutubeQuerybyChatGPT
-from getYoutubeInfomation import getYoutubeInfomation
+from YoutubeRecommenditon.getYoutubeQuerybyChatGPT import getYoutubeQuerybyChatGPT
+from YoutubeRecommenditon.getYoutubeInfomation import getYoutubeInfomation
 import os
 
 def getYoutubeRecommendetion(YOUTUBE_API_KEY,OPENAI_API_KEY,inputs, videoDuration='any'):
