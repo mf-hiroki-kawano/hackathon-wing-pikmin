@@ -46,3 +46,28 @@ def recommend_movie(req: FeelingRequest):
     response = {"data": formatted_data}
     logger.info("Response JSON: %s", response)
     return response
+
+@app.get("/health")
+def helth():
+    return {
+        "data": [
+            {
+                "url": "https://example.com",
+                "name": "Example1",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            },
+            {
+                "url": "https://example2.com",
+                "name": "Example2",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            },
+            {
+                "url": "https://example3.com",
+                "name": "Example3",
+                "icon": "https://i.ytimg.com/vi/iS9KzCBOmFo/hqdefault.jpg",
+                "review": "とても良いサービスです！"
+            }
+        ]
+    }
