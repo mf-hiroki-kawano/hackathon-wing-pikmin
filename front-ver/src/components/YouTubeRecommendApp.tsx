@@ -3,15 +3,18 @@
 import React, { useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import MoodButton from './MoodButton';
+import SceneButton from './SceneButton';
 import VideoCard from './VideoCard';
 import type { Video } from '../types/video';
 import { MOODS } from '../constants/moods';
+import { SCENES } from '../constants/scenes';
 import { DEMO_VIDEOS } from '../constants/demoVideos';
-import { recommendApi, ApiError } from '../lib/apiClient';
+import { recommendByFilters, ApiError } from '../lib/apiClient';
 import { coerceVideos } from '../utils/validation';
 
 // メインアプリコンポーネント
 const YouTubeRecommendApp = () => {
+  const [selectedScene, setSelectedScene] = useState<string | null>(null);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState<Video[]>([]);
@@ -20,9 +23,10 @@ const YouTubeRecommendApp = () => {
   const currentControllerRef = useRef<AbortController | null>(null);
 
   const moods = MOODS;
+  const scenes = SCENES;
 
   // バックエンドAPIを呼び出す関数（タイムアウト/重複防止/バリデーション/共通エラー対応）
-  const fetchVideos = async (mood: string, query: string = '') => {
+  const fetchVideos = async (filters: string[]) => {
     setLoading(true);
     setError(null);
 
@@ -34,7 +38,7 @@ const YouTubeRecommendApp = () => {
       const controller = new AbortController();
       currentControllerRef.current = controller;
 
-      const data = await recommendApi(mood, query, { timeoutMs: 10000, signal: controller.signal });
+      const data = await recommendByFilters(filters, { timeoutMs: 10000, signal: controller.signal });
       const validated = coerceVideos(data.videos);
       setVideos(validated);
     } catch (err) {
@@ -59,15 +63,19 @@ const YouTubeRecommendApp = () => {
     }
   };
 
+  const handleSceneClick = (sceneId: string) => {
+    setSelectedScene(sceneId);
+  };
+
   const handleMoodClick = (moodId: string) => {
-    setSelectedMood(moodId);
-    fetchVideos(moodId, searchQuery);
+    setSelectedMood((prev) => (prev === moodId ? null : moodId));
   };
 
   const handleSearch = () => {
-    if (selectedMood) {
-      fetchVideos(selectedMood, searchQuery);
-    }
+    const keywords = searchQuery.trim() ? searchQuery.trim().split(/\s+/) : [];
+    const filters = [selectedScene ?? '', selectedMood ?? '', ...keywords].filter(Boolean);
+    if (filters.length === 0) return;
+    fetchVideos(filters);
   };
 
   return (
@@ -79,11 +87,24 @@ const YouTubeRecommendApp = () => {
 
       {/* メインコンテンツ */}
       <main className="max-w-6xl mx-auto p-6">
-        {/* 気分選択セクション */}
+        {/* シーン・気分・検索 */}
         <div className="mb-8">
-          <h2 className="text-2xl text-center mb-6 text-gray-800">
-            どんな気分になりたいですか？
-          </h2>
+          <h2 className="text-2xl text-center mb-6 text-gray-800">どんなシーンですか？</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {scenes.map((scene) => (
+              <SceneButton
+                key={scene.id}
+                label={scene.label}
+                description={scene.description}
+                isSelected={selectedScene === scene.id}
+                onClick={() => handleSceneClick(scene.id)}
+                icon={scene.icon}
+                colorClass={scene.colorClass}
+              />
+            ))}
+          </div>
+
+          <h2 className="text-2xl text-center mb-6 text-gray-800">どんな気分になりたいですか？</h2>
           <div className="flex flex-wrap justify-center gap-3 mb-6">
             {moods.map((mood) => (
               <MoodButton
@@ -97,19 +118,18 @@ const YouTubeRecommendApp = () => {
             ))}
           </div>
 
-          {/* 検索バー */}
           <div className="flex gap-2 max-w-3xl mx-auto">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="キーワードで検索"
+              placeholder="キーワードで検索（例：短い アニメ 音楽 など）"
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
             <button
               onClick={handleSearch}
-              disabled={!selectedMood}
+              disabled={loading}
               className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               <Search size={20} />
@@ -145,7 +165,7 @@ const YouTubeRecommendApp = () => {
         )}
 
         {/* 初期状態のメッセージ */}
-        {!loading && videos.length === 0 && !selectedMood && (
+        {!loading && videos.length === 0 && !selectedScene && !selectedMood && !searchQuery && (
           <div className="text-center py-12 text-gray-500">
             気分を選択して、おすすめの動画を見つけましょう！
           </div>

@@ -56,6 +56,10 @@ export async function recommendApi(mood: string, query: string, options: ApiClie
   return postJson<{ videos?: unknown }>(RECOMMEND_ENDPOINT, { mood, query }, options);
 }
 
+export async function recommendByFilters(filters: string[], options: ApiClientOptions = {}) {
+  return postJson<{ videos?: unknown }>(RECOMMEND_ENDPOINT, { filters }, options);
+}
+
 function isAbortError(err: unknown) {
   return err instanceof DOMException && err.name === 'AbortError';
 }
