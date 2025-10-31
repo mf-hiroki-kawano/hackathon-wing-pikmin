@@ -1,6 +1,6 @@
 from googleapiclient.errors import HttpError
 
-def getYoutubeInfomation(youtube, search_query):
+def getYoutubeInfomation(youtube, search_query, videoDuration):
     # ① 動画検索（動画ID取得）
     search_response = youtube.search().list(
         q=search_query,
